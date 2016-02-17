@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/travissimon/goobernet/data"
+	"github.com/travissimon/goobernet/docker"
 )
 
 const (
@@ -38,6 +39,21 @@ func getDeploymentsHandler(w http.ResponseWriter, r *http.Request) {
 	marshalAndWrite(data.GetDeployments(), w)
 }
 
+func getTemplatesHandler(w http.ResponseWriter, r *http.Request) {
+	marshalAndWrite(data.GetTemplates(), w)
+}
+
+func getContainersHandler(w http.ResponseWriter, r *http.Request) {
+	containers, err := docker.GetContainers()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error())
+		w.WriteHeader(400)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	marshalAndWrite(containers, w)
+}
+
 func getDiscoveryHandler(w http.ResponseWriter, r *http.Request) {
 	environment := string(r.URL.Path[len(DISCOVERY_PATH):])
 	deployments, err := data.GetDeploymentsByEnvironmentName(environment)
@@ -64,6 +80,8 @@ func main() {
 	http.HandleFunc("/v1/projects", getProjectsHandler)
 	http.HandleFunc("/v1/environments", getEnvironmentsHandler)
 	http.HandleFunc("/v1/deployments", getDeploymentsHandler)
+	http.HandleFunc("/v1/containers", getContainersHandler)
+	http.HandleFunc("/v1/templates", getTemplatesHandler)
 	http.HandleFunc(DISCOVERY_PATH, getDiscoveryHandler)
 	http.HandleFunc("/healthz", healthzHandler)
 
