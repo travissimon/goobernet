@@ -1,0 +1,48 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Orchestrates dev and staging environments for microservice clusters",
+        "version": "1.0.0",
+        "title": "Goobernet",
+        "contact": {
+            "name": "Travis Simon",
+            "email": "travis.simon@nicta.com.au"
+        },
+        "license": {
+            "name": "GPL 3.0",
+            "url": "http://www.gnu.org/licenses/gpl-3.0.en.html"
+        }
+    },
+    "host": "localhost:8080",
+    "schemes": [
+        "http"
+    ],
+    "paths": {
+        "/v1/projects": {
+            "get": {
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Gets a list of microservices",
+                "description": "Lists services available in the cluster",
+                "operationId": "getProjects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successful operation"
+                    },
+                    "400": {
+                        "description": "malformed log message"
+                    }
+                }
+            }
+        },
+    },
+}
