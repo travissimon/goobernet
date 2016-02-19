@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/travissimon/goobernet/ci"
 	"github.com/travissimon/goobernet/data"
 	"github.com/travissimon/goobernet/docker"
-	"github.com/travissimon/goobernet/jenkins"
 )
 
 const (
@@ -24,17 +24,16 @@ func swaggerIndexHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "swagger/goobernet.swagger.json")
 }
 
-func writeError(w http.ResponseWriter, format string, args ...interface{}) {
+func writeError(w http.ResponseWriter, code int, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	fmt.Fprintf(os.Stderr, msg)
-	w.WriteHeader(400)
-	w.Write([]byte(msg))
+	http.Error(w, msg, code)
 }
 
 func marshalAndWrite(obj interface{}, w http.ResponseWriter) {
 	json, err := json.Marshal(obj)
 	if err != nil {
-		writeError(w, "Error marshalling object: %s\n", err)
+		writeError(w, http.StatusInternalServerError, "Error marshalling object: %s\n", err)
 		return
 	}
 	fmt.Fprintf(w, "%s", json)
@@ -59,7 +58,7 @@ func getTemplatesHandler(w http.ResponseWriter, r *http.Request) {
 func getContainersHandler(w http.ResponseWriter, r *http.Request) {
 	containers, err := docker.GetContainers()
 	if err != nil {
-		writeError(w, "Error retrieving docker containers: %s\n", err)
+		writeError(w, http.StatusInternalServerError, "Error retrieving docker containers: %s\n", err)
 		return
 	}
 	marshalAndWrite(containers, w)
@@ -69,16 +68,16 @@ func getDiscoveryHandler(w http.ResponseWriter, r *http.Request) {
 	environment := string(r.URL.Path[len(DISCOVERY_PATH):])
 	deployments, err := data.GetDeploymentsByEnvironmentName(environment)
 	if err != nil {
-		writeError(w, "Error with discovery: %s\n", err.Error())
+		writeError(w, http.StatusInternalServerError, "Error with discovery: %s\n", err.Error())
 		return
 	}
 	marshalAndWrite(deployments, w)
 }
 
 func getJobsHandler(w http.ResponseWriter, r *http.Request) {
-	jobs, err := jenkins.GetAllJobNames()
+	jobs, err := ci.Proxy.GetTasks()
 	if err != nil {
-		writeError(w, "Error querying Jenkins: %s\n", err.Error())
+		writeError(w, http.StatusInternalServerError, "Error querying ci server: %s\n", err.Error())
 		return
 	}
 	marshalAndWrite(jobs, w)
@@ -94,31 +93,28 @@ func getJobHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleGetJob(jobName string, w http.ResponseWriter) {
-	job, err := jenkins.GetJobDetails(jobName)
+func handleGetJob(taskName string, w http.ResponseWriter) {
+	task, err := ci.Proxy.GetTaskDetails(taskName)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "Jenkins job '%s' not found\n", jobName)
+		writeError(w, http.StatusNotFound, "Build task '%s' not found\n", taskName)
 		return
 	}
-	fmt.Fprintf(os.Stderr, "Apparently we escaped error trap")
-	marshalAndWrite(job, w)
+	marshalAndWrite(task, w)
 }
 
-func handlePostJob(jobName string, w http.ResponseWriter, r *http.Request) {
+func handlePostJob(taskName string, w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var project data.Project
 	err := decoder.Decode(&project)
 	if err != nil {
-		writeError(w, "Error decoding project json: %s\n", err.Error())
+		writeError(w, http.StatusInternalServerError, "Error decoding project json: %s\n", err.Error())
 		return
 	}
-	err = jenkins.CreateJob(project)
+	err = ci.Proxy.CreateTask(project)
 	if err != nil {
-		writeError(w, "Error creating Jenkins job: %s\n", err.Error())
+		writeError(w, http.StatusInternalServerError, "Error creating ci task: %s\n", err.Error())
 		return
 	}
-	w.WriteHeader(200)
 }
 
 func healthzHandler(w http.ResponseWriter, r *http.Request) {

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -44,6 +45,7 @@ func (slice ProjectList) Swap(i, j int) {
 type Environment struct {
 	Id           uint   `json:"id"`
 	Name         string `json:"name"`
+	Hostname     string `json:"hostname"`
 	GoobenetUrl  string `json:"goobernetUrl"`
 	StartingPort uint   `json:"startingPort"`
 }
@@ -51,14 +53,14 @@ type Environment struct {
 type Deployment struct {
 	Project     Project
 	Environment Environment
-	Location    string // url:port
+	Port        uint
 }
 
 // Used to serialise and deserialise deployments
 type DeploymentJoin struct {
-	EnvironmentId uint   `json:"environmentId"`
-	ProjectId     uint   `json:"projectId"`
-	Location      string `json:"location"`
+	EnvironmentId uint `json:"environmentId"`
+	ProjectId     uint `json:"projectId"`
+	Port          uint `json:"port"`
 }
 
 type JenkinsTemplate struct {
@@ -133,7 +135,7 @@ func GetDeploymentsByEnvironmentId(id uint) (map[string]string, error) {
 	for i := 0; i < len(deployments); i++ {
 		d := deployments[i]
 		if d.Environment.Id == id {
-			urlMap[d.Project.ShortName] = d.Location
+			urlMap[d.Project.ShortName] = d.Environment.Hostname + ":" + strconv.FormatUint(uint64(d.Port), 10)
 		}
 	}
 
@@ -295,7 +297,7 @@ func readConfig() {
 			fmt.Fprintf(os.Stderr, "Environment id %d not found during initialisation\n", join.EnvironmentId)
 			continue
 		}
-		depls = append(depls, Deployment{proj, env, join.Location})
+		depls = append(depls, Deployment{proj, env, join.Port})
 	}
 
 	deployments = depls
