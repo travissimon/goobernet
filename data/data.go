@@ -12,9 +12,10 @@ import (
 )
 
 type GoobernetConfig struct {
-	JenkinsUrl      string `json:jenkinsUrl`
-	JenkinsUsername string `json:jenkinsUsername`
-	JenkinsPassword string `json:jenkinsPassword`
+	JenkinsUrl      string `json:"jenkinsUrl"`
+	JenkinsUsername string `json:"jenkinsUsername"`
+	JenkinsPassword string `json:"jenkinsPassword"`
+	Registry        string `string:"registry"`
 }
 
 type Project struct {
@@ -48,6 +49,7 @@ type Environment struct {
 	Hostname     string `json:"hostname"`
 	GoobenetUrl  string `json:"goobernetUrl"`
 	StartingPort uint   `json:"startingPort"`
+	Registry     string `json:"registry"`
 }
 
 type Deployment struct {
@@ -173,7 +175,7 @@ func createConfigDirectory() {
 	// create directory
 	os.Mkdir(".goobernet", 0755)
 
-	c := GoobernetConfig{"https://docker-server.dev.etd.nicta.com.au", "username", "password"}
+	c := GoobernetConfig{"https://docker-server.dev.etd.nicta.com.au", "username", "password", "etd-docker.research.nicta.com.au"}
 	if err := serialise(config, "config.json"); err != nil {
 		return
 	}
