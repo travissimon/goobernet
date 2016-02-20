@@ -32,7 +32,7 @@ type Build struct {
 	Result    string    `json:"result"`
 	Timestamp time.Time `json:"timestamp"`
 	Url       string    `json:"url"`
-	IsGood    bool      `json:isGood`
+	IsGood    bool      `json:"isGood"`
 }
 
 type BuildServerProxy interface {

@@ -94,9 +94,9 @@ func GetContainers() ([]Container, error) {
 }
 
 // remove me soon
-func startExample() {
-	ports := make([]docker.Port, 0, 1)
-	ports = append(ports, docker.Port{Private: 8080, Public: 8080, Type: "tcp"})
+func exampleCreate() {
+	ports := make([]Port, 0, 1)
+	ports = append(ports, Port{Private: 8080, Public: 8080, Type: "tcp"})
 
 	vars := make(map[string]string)
 	vars["env-var"] = "env-val"
@@ -106,13 +106,13 @@ func startExample() {
 	containerName := "bpc-core-service"
 	img := registry + "/" + containerName
 	fmt.Printf("Creating from img: %s\n", img)
-	ctr, err := docker.CreateContainer(containerName, img, "dev", ports, vars)
+	ctr, err := CreateContainer(containerName, img, "dev", ports, vars)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating container: %s\n", err.Error())
 	}
 
-	err = docker.StartContainer(ctr.ID)
+	err = StartContainer(ctr.ID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error starting container: %s\n", err.Error())
 	}
